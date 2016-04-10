@@ -4,9 +4,9 @@ author: "Janice Luong"
 date: "November 17, 2015"
 output: html_document
 ---
-In this assignment I used the old (original) database because 8.5gig would have taken too long to download. I defined movies as movies.type = 3 and I filtered out the tv series from movies.type = 3. However, sometimes TV shows do occassionally show up, for example in Question 13, when I look up the movies Andrew Garfield has been in, it also counts TV series such as award shows as a "movie". I'm not sure why even though I did filter out the series.idmovies from movies.idmovies. I emailed Duncan about this and he never responded to me, but I think there is something wrong with the old database.
+In this assignment I used the old (original) database because 8.5gig would have taken too long to download. I defined movies as movies.type = 3 and I filtered out the tv series from movies.type = 3. However, sometimes TV shows do occassionally show up, for example in Question 13, when I look up the movies Andrew Garfield has been in, it also counts TV series such as award shows as a "movie". I'm not sure why even though I did filter out the series.idmovies from movies.idmovies.
 
-Also when I re-did questions 9-12 in R, I tried to get each table using queries such as "SELECT * FROM table"; however, every time I did, I would run out of memory or R would return an error that the data base was too large. I saw that Duncan posted up smaller data bases, but my internet at my parent's house (I finished this over Thanksgiving break) is very slow and it would have taken up about 10 hours to finish dowloading. Also the smaller databases appears to be for the new database, but I am using the old database, so either way I did not benefit me. 
+Also when I re-did questions 9-12 in R, I tried to get each table using queries such as "SELECT * FROM table"; however, every time I did, I would run out of memory or R would return an error that the data base was too large. 
 
 I did this assignment by myself and developed and wrote the code for each part by myself, drawing only from class, section, Piazza posts and the Web. I did not use code from a fellow student or a tutor or any other individual.
 
