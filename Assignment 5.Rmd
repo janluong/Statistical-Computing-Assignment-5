@@ -2,29 +2,26 @@
 title: "Assignment 5"
 author: "Janice Luong"
 date: "November 17, 2015"
-output: html_document
+output: pdf_document
 ---
-In this assignment I used the old (original) database because 8.5gig would have taken too long to download. I defined movies as movies.type = 3 and I filtered out the tv series from movies.type = 3. However, sometimes TV shows do occassionally show up, for example in Question 13, when I look up the movies Andrew Garfield has been in, it also counts TV series such as award shows as a "movie". I'm not sure why even though I did filter out the series.idmovies from movies.idmovies.
-
-Also when I re-did questions 9-12 in R, I tried to get each table using queries such as "SELECT * FROM table"; however, every time I did, I would run out of memory or R would return an error that the data base was too large. 
-
-I did this assignment by myself and developed and wrote the code for each part by myself, drawing only from class, section, Piazza posts and the Web. I did not use code from a fellow student or a tutor or any other individual.
-
-Signature & Date:  
+In this assignment I used the old (original) database because 8.5gig would have taken too long to download. I defined movies as movies.type = 3 and I filtered out the tv series from movies.type = 3. However, sometimes TV shows do occassionally show up, for example in Question 13, when I look up the movies Andrew Garfield has been in, it also counts TV series such as award shows as a "movie". I'm not sure why even though I did filter out the series.idmovies from movies.idmovies. 
 
 Resouces: Piazza, STA 141 Lectures Discussion OH, Stacked Overflow, the Web, and sample solutions from past assignments.
 
-```{r, results = 'hide'}
+```{r, results = 'hide', message=FALSE}
 library(RSQLite)
 con = dbConnect(SQLite(), "C:/JANICE/UC DAVIS/FALL 2015/STA 141/Assignment 5/imdb_data")
 dbListTables(con)
 ```
 
 ###Question 1: How many actors are there in the database? How many movies?
-```{r}
-#get the amount of unique actors from the column idactors. SELECT the column idactors, but get only the unique values and COUNT all the values FROM the table actors
+```{r, cache=TRUE}
+# get the amount of unique actors from the column idactors. SELECT the column idactors, 
+# but get only the unique values and COUNT all the values FROM the table actors
 dbGetQuery(con, "SELECT DISTINCT COUNT(idactors) FROM actors")
-#get the amount of movies. SELECT the column idmovies and COUNT all the non-null values. LEFT JOIN series ON series.idmoves IS NULL so that way I can filter out all the TV series. I only want the movies.type = 3 because thats where the movies are.
+# get the amount of movies. SELECT the column idmovies and COUNT all the non-null values. 
+# LEFT JOIN series ON series.idmoves IS NULL so that way I can filter out all the TV series. 
+# I only want the movies.type = 3 because thats where the movies are.
 dbGetQuery(con, "SELECT 
            COUNT(movies.idmovies)
            FROM movies 
@@ -40,10 +37,13 @@ I took the unique count of actors from the column idactors because some actor na
 The number of movies is 1014745. I counted idmovies, where the type was '3' because type 3 are movies and I took out the TV series by doing a LEFT JOIN on series and setting the WHERE clause to series.idmovies IS NULL. This removes any movies that have a series ID (I repeated this step for all problems that ask about movies). Also movies.type = 1 had a lot of adult/rated X films so I filtered those out and movies.type = 2 were just video games.
 
 ###Question 2: What time period does the database cover?
-```{r}
-#UNION ALL is the same as UNION but it allows duplicates 
-#take from table title because in table movie, the min year was 1 which is not possible
-#SELECT MAX and MIN years FROM a table that has a column of years, which is taken FROM the table movies and the table aka_titles (since they both have a column named years), use UNION ALL to combine both columns, allowing duplicates. I filtered the years so it was restricted between 1885 and 2016 (exclusive)
+```{r, cache=TRUE}
+# UNION ALL is the same as UNION but it allows duplicates 
+# take from table title because in table movie, the min year was 1 which is not possible
+# SELECT MAX and MIN years FROM a table that has a column of years, which is taken FROM 
+# the table movies and the table aka_titles (since they both have a column named years), 
+# use UNION ALL to combine both columns, allowing duplicates. I filtered the years so it 
+# was restricted between 1885 and 2016 (exclusive)
 dbGetQuery(con, "SELECT 
            MAX(year) as 'Max Year', 
            MIN(year) as 'Min Year' 
@@ -62,9 +62,15 @@ The time period the database covers between years 1887 and 2015.
 I tried to use JOIN; however, FULL JOIN is not supported on SQLite. I wanted a FULL JOIN so that way I can get all the years possible from both year columns from I realized that since I simply only want two columns from two different tables (and they have the same amount of rows), I can used UNION ALL (this allows duplicates) to get the min and max years from the combined columns. I set the restriction where year must be greater than 1885 because the first motion picture ever made was in 1886. Year must also be less than 2016 because it is currenly 2015, so it is not possible to have a movie past 2015. Although IMDB covers upcoming movies (up to year 2025) we cannot be completely sure that the movie will be released, so I stopped at year 2015.
 
 ###Question 3: What proportion of the actors are female? male?
-```{r}
-#get the number of females and males 
-#if gender is 1, then set it to male, else set it to female, we want two columns called 'gender' and 'percent'. use comma to seperate the columns. COUNT counts the number of lines returned (if gender is NULL then set it to 2) / -- division (counts total number of entries in the actors table) / -- division 100.0 -- divides the total number of entries in the actors table by 100, use as 'percent' means to change the column name to percent. Get all this from the table actors and group them by gender
+```{r, cache=TRUE}
+# get the number of females and males 
+# if gender is 1, then set it to male, else set it to female, we want two 
+# columns called 'gender' and 'percent'. use comma to seperate the columns. 
+# COUNT counts the number of lines returned (if gender is NULL then set 
+# it to 2) / -- division (counts total number of entries in the actors table) 
+# / -- division 100.0 -- divides the total number of entries in the actors 
+# table by 100, use as 'percent' means to change the column name to percent. 
+# Get all this from the table actors and group them by gender
 dbGetQuery(con, "SELECT 
           CASE 
               WHEN gender = '1' 
@@ -86,9 +92,11 @@ I noticed that when I did COUNT(gender), it would give me back the total number 
 Originally I had "SELECT CASE WHEN gender = '1' THEN 'male' ELSE 'female' END as 'gender', COUNT(gender) as 'count' FROM actors GROUP BY gender", but I kept on getting females are 0. In the column gender from table actors, 1 are males and 0 are females; however, the 0 was auto set to N/A. To solve this issues, I used CASE (similar to if-else statements), which allows me to go through every row and sort them between 'male' or 'female', where if gender is '1', then it will be set to male, anything else, will be set to female. COUNT(ISNULL(gender,1)), where COUNT is the function and inside it, it 1 paramter, which is ISNULL(). The ISNULL() is a function with  parameters gender and 1 gender is the value of the column 1 is the value that is given if gender is null.
 
 ###Question 4: What proportion of the entries in the movies table are actual movies and what proportion are television series, etc.?
-```{r}
-#adult/rated X films are type 1, games are type 2, movies/TV series are type 3
-#I sorted by using CASE...END and found all the movie type 1 and 2 and set them to different variable names, and the last one, which is type 3 will be another name. NExt I made a column that got the percentages of each type.
+```{r, cache=TRUE}
+# adult/rated X films are type 1, games are type 2, movies/TV series are type 3
+# I sorted by using CASE...END and found all the movie type 1 and 2 and set them to 
+# different variable names, and the last one, which is type 3 will be another name. 
+# Next I made a column that got the percentages of each type.
 dbGetQuery(con, "SELECT
            CASE
                WHEN type = '1'
@@ -104,7 +112,13 @@ dbGetQuery(con, "SELECT
            GROUP BY type")
 ```
 ```{r}
-#get the percentage of just movies without the TV series, and percentage of TV series without movies. SELECT the COUNTed rows and rename it to 'Count of Movies', then from there I made another column which gets the percentage of all the COUNT(*) and divides it by the total rows of movies/100. I filtered my result so it was only movies by setting series.idmovies to NULL (so any movie with a series ID will be removed) and I only wanted movie.type = 3 since type 1 and 2 are rated X files and video games
+# get the percentage of just movies without the TV series, and percentage of 
+# TV series without movies. SELECT the COUNTed rows and rename it to 'Count 
+# of Movies', then from there I made another column which gets the percentage 
+# of all the COUNT(*) and divides it by the total rows of movies/100. I filtered 
+# my result so it was only movies by settingseries.idmovies to NULL (so any 
+# movie with a series ID will be removed) and I only wanted 
+# movie.type = 3 since type 1 and 2 are rated X files and video games
 dbGetQuery(con, "SELECT 
            COUNT(*) as 'Count of Movies', 
            (SELECT 
@@ -147,8 +161,9 @@ When I tried my SQL expression with the CASE...END and replaced it with type, th
 Adding "WHERE type IS NOT NULL" removed the row of NA because the percentage was 0.0000 so it was not significant information to have. Adding the query "type IS NOT NULL" does not count the NA's from the table movies.
 
 ###Question 5: How many genres are there? What are their names/descriptions?
-```{r}
-#get the all the genres in the database by SELECTing the column genre (renamed to 'Genres') FROm the table genres
+```{r, cache=TRUE}
+# get the all the genres in the database by SELECTing the column genre 
+# (renamed to 'Genres') FROm the table genres
 genres = dbGetQuery(con, "SELECT genre 'Genres' FROM genres")
 ```
 
@@ -156,13 +171,20 @@ To get all the genres that are in the database, I SELECTed the column genre FROM
 
 There are 32 genres. Their Names and descriptions are:
 
-```{r, echo = FALSE}
+```{r, echo = FALSE, cache=TRUE}
 genres
 ```
 
 ###6: List the 10 most common genres of movies, showing the number of movies in each of these genres.
 ```{r}
-#SELECT the columns idgenres and genres from genres because we want the count, but just the count without the name/label of the genre is not helpfull, so with both columns it gives us meaningful data. This done through INNER JOINing the tables genres and movies_genres Then COUNT the rows idmovies_genres from the table movies_genres and group them by genre (from genres). Filter out the TV series by LEFT JOINing series and setting series.idmovies to NULL and get only the movies.type = 3. Decending, meaning the next number is smaller, and get the first 10
+# SELECT the columns idgenres and genres from genres because we want the count, 
+# but just the count without the name/label of the genre is not helpfull, so 
+# with both columns it gives us meaningful data. This done through INNER JOINing 
+# the tables genres and movies_genres. Then COUNT the rows idmovies_genres from 
+# the table movies_genres and group them by genre (from genres). Filter out the 
+# TV series by LEFT JOINing series and setting series.idmovies to NULL and get 
+# only the movies.type = 3. Decending, meaning the next number is smaller, 
+# and get the first 10
 dbGetQuery(con, "SELECT movies_genres.idgenres 'Genre ID', genres.genre 'Genre Discription', 
            COUNT(*) 'Total' 
            FROM movies_genres 
@@ -184,8 +206,13 @@ dbGetQuery(con, "SELECT movies_genres.idgenres 'Genre ID', genres.genre 'Genre D
 Originally, I had: SELECT idgenres, COUNT(idmovies_ genres) FROM movies_genres GROUP BY idgenres ORDER BY COUNT(idmovies _genres) DESC LIMIT 10; but it did not have the genre names/discriptions. In order to get the genre names/discriptions I used INNER JOIN.
 
 ###Question 7: Find all movies with the keyword 'space'. How many are there? What are the years these were released? and who were the top 5 actors in each of these movies?
-```{r}
-#get the number of movies with the keywords space (with anything following or before the word space). This is done by getting the COUNT of movies ID through INNER JOIN of the tables keywords and movies_keywords ON the key column idkeywords. Filtered out the movies with a series ID by doing a LEFT JOIN on movies and series ON the key column idmovies and set series.idmovies to NULL and get only the rows with movies.type = 3.  
+```{r, cache=TRUE}
+# get the number of movies with the keywords space (with anything following 
+# or before the word space). This is done by getting the COUNT of movies ID 
+# through INNER JOIN of the tables keywords and movies_keywords ON the key 
+# column idkeywords. Filtered out the movies with a series ID by doing a 
+# LEFT JOIN on movies and series ON the key column idmovies and 
+# set series.idmovies to NULL and get only the rows with movies.type = 3.  
 dbGetQuery(con, "SELECT 
            COUNT(movies_keywords.idmovies) 'Number Of Movies With Keyword space' 
            FROM keywords 
@@ -200,8 +227,15 @@ dbGetQuery(con, "SELECT
            AND LOWER(keywords.keyword) 
            LIKE 'space'")
 ```
-```{r}
-#get the years, this is done by SELECTing the year column from INNER JOINing the tables keywords and movies_keywords on the key column idkeywords. Next I do another INNER JOIN on the tables movies and movies_keywords on the key column idmovies. This is needed so I can get to the table with the years that are also connected to the tables keywords and movies_keywords. Next I filtered my result to remove the Tv series and only the movie.type = 3. Next I looked for keywords that are LIKE space. Finally I GROUPed BY year so I can get only the unique years.
+```{r, cache=TRUE}
+# get the years, this is done by SELECTing the year column from INNER JOINing 
+# the tables keywords and movies_keywords on the key column idkeywords. Next 
+# I do another INNER JOIN on the tables movies and movies_keywords on the key 
+# column idmovies. This is needed so I can get to the table with the years that 
+# are also connected to the tables keywords and movies_keywords. Next I filtered 
+# my result to remove the Tv series and only the movie.type = 3.Next I looked for 
+# keywords that are LIKE space. Finally I GROUPed BY year so I can get only 
+# the unique years.
 dbGetQuery(con, "SELECT movies.year 'Year'
            FROM keywords 
            INNER JOIN movies_keywords 
@@ -217,8 +251,16 @@ dbGetQuery(con, "SELECT movies.year 'Year'
            LIKE 'space'
            GROUP BY movies.year")
 ```
-```{r}
-#get the top 5 actors in each of those movies, this is done by  getting the relevent columns from the INNER JOINing of the tables actors, movies and movies_keywords. This is done to get the relevent columns: lname, fname, billing_position, titles and keywords. Next I filtered my results so the I only get actors with only a movie ID (no series ID),movie type of 3, have been in movies that have a keyword 'space' and have a billing position of 5 or less. Then I GROUPed by the actor's lname and fname (or else I will have repeated actor names) and then I finally ordered by the movie title then ordered by the billing position of the actor for that movie.
+```{r, cache=TRUE}
+# get the top 5 actors in each of those movies, this is done by  getting 
+# the relevent columns from the INNER JOINing of the tables actors, movies 
+# and movies_keywords. This is done to get the relevent columns: lname, fname, 
+# billing_position, titles and keywords. Next I filtered my results so the I 
+# only get actors with only a movie ID (no series ID), movie type of 3, have 
+# been in movies that have a keyword 'space' and have a billing position of 5 
+# or less. Then I GROUPed by the actor's lname and fname (or else I will 
+# have repeated actor names) and then I finally ordered by the movie title then 
+# ordered by the billing position of the actor for that movie.
 dbGetQuery(con, "SELECT actors.lname ||', '|| actors.fname 'Last Name, First Name', 
            acted_in.billing_position 'Billing Postion', 
            movies.title 'Movie Title', keywords.keyword 'Keyword'
@@ -271,8 +313,20 @@ I made the lname and fname columns into 1 column using || and splitting them by 
 As you can see from the first 10 (I limited it to 10 or else the table would have been several pages long), not all movies have a top 5 actor. So either the movies did not have a top 5 actors for billing or the information was not entered into the data base. Also some movies have multiple of the same position. This likely means that two or more actors in the same movie got paid the same or very similar amounts (hence same "billing" position).
 
 ###Question 8: Has the number of movies in each genre changed over time? Plot the overall number of movies in each year over time, and for each genre.
-```{r}
-#get the number of genres per year. I SELECTed the columns year from table movies and the column genre from the table genres and INNER JOINed them on the key column idmovies. Then I INNER JOINed the column idengres from table movies_ genres using the key column idengres from the two tables genres and movies_genres. Next I LEFT JOINed series on the tables series and movies ON the key column idmovies. Then I set series.idmovies to NULL to filter out all the movies/TV shows that have a series ID. Since I want the number of movies in each genre changed over time, This means I want the count of a movie genre for each year. Using ||, which is the concatinate function that combines two strings together, I combined the movies.year and genres.genre columns together, this way I can GROUP BY both year and genres at the same time. I counted all the columns because it would have been the same result if I wrote COUNT(genres.genre).
+```{r, cache=TRUE}
+# get the number of genres per year. I SELECTed the columns year from 
+# table movies and the column genre from the table genres and INNER JOINed 
+# them on the key column idmovies. Then I INNER JOINed the column idengres 
+# from table movies_ genres using the key column idengres from the two tables 
+# genres and movies_genres. Next I LEFT JOINed series on the tables series 
+# and movies ON the key column idmovies. Then I set series.idmovies to NULL to 
+# filter out all the movies/TV shows that have a series ID. Since I want the 
+# number of movies in each genre changed over time, This means I want the count 
+# of a movie genre for each year. Using ||, which is the concatinate function 
+# that combines two strings together, I combined the movies.yearand genres.genre 
+# columns together, this way I can GROUP BY both year and genres at the same time. 
+# I counted all the columns because it would have been the same result if I wrote 
+# COUNT(genres.genre).
 dbGetQuery(con, "SELECT movies.year ||' '|| genres.genre 'Movie Year and Genre', 
            COUNT(*) 'Total' 
            FROM movies 
@@ -285,8 +339,10 @@ dbGetQuery(con, "SELECT movies.year ||' '|| genres.genre 'Movie Year and Genre',
            AND movies.year ||' '|| genres.genre IS NOT NULL
            GROUP BY movies.year ||' '|| genres.genre LIMIT 10")
 ```
-```{r}
-#plot overall number of movies in each year over time and for each genre. Same query as above but seperated the year and genres. This is done so I can plot it.
+```{r, cache=TRUE}
+# plot overall number of movies in each year over time and for each genre. 
+# Same query as above but seperated the year and genres. This is done 
+# so I can plot it.
 genresANDYear = dbGetQuery(con, "SELECT movies.year 'Year', genres.genre 'Genre', 
                            COUNT(*) 'Total' FROM movies 
                            INNER JOIN movies_genres 
@@ -298,8 +354,10 @@ genresANDYear = dbGetQuery(con, "SELECT movies.year 'Year', genres.genre 'Genre'
                            WHERE series.idmovies IS NULL
                            GROUP BY genres.genre")
 ```
-```{r}
-#remove the first row because it is NA, so it does not have a genre OR year. This does not add information to our plot (also having NA's makes it not possible to plot)
+```{r, cache=TRUE, message=FALSE}
+#remove the first row because it is NA, so it does not have a genre 
+# OR year. This does not add information to our plot (also having NA's 
+# makes it not possible to plot)
 genresANDYear = na.omit(genresANDYear)
 
 library(ggplot2)
@@ -319,8 +377,20 @@ I made a new query that is very similar to my original query because although it
 In the stacked bar plot, we can see that there were certain genres that were popular at different times and that the genre changes over time. My plot starts at 1970's because all the years earlier than 1970's did not have enough data (for example, it would have year 1910 with the genre News with a count of 1). The data was too little/not significant enough to be shown up on the plot espically since some genres go up to 10,000 counts. Genres that do not show up on the plot in certain years are assumed to have a count of 0. 
 
 ###Question 9: Who are the actors that have been in the most movies? List the top 20.
-```{r}
-#To get the top 20 actors in the most amount of movies, I INNER JOINed the two tables actors and acted_in ON the key column idactors. Next I did a LEFT JOIN on series and movies on the key column idmovies, and set the WHERE clause series.idmovies IS NULL so that way I can filter out all the tv series from movies (WHERE movie.type = 3). I took the columns lname and fname from actors and the column character from acted _in. Next I created a COUNT() column that couned the DISTINCT acted _in.idmovies values so that way it would only count . I GROUPed BY idactors so that way I would not have dubplicate actors. Then I ORDERed BY the COUNT() of characters. Since ORDER BY goes from lowest to highest, I added the field DESC so it would go from highest to lowest so that way I can simply just take the first 20 as the top 20 actors who have been in the most movies.
+```{r, cache=TRUE}
+# To get the top 20 actors in the most amount of movies, I INNER JOINed 
+# the two tables actors and acted_in ON the key column idactors. Next I 
+# did a LEFT JOIN on series and movies on the key column idmovies, and 
+# set the WHERE clause series.idmovies IS NULL so that way I can filter 
+# out all the tv series from movies (WHERE movie.type = 3). I took 
+# the columns lname and fname from actors and the column character from 
+# acted _in. Next I created a COUNT() column that couned the DISTINCT 
+# acted _in.idmovies values so that way it would only count . I GROUPed BY 
+# idactors so that way I would not have dubplicate actors. Then I ORDERed 
+# BY the COUNT() of characters. Since ORDER BY goes from lowest to highest, 
+# I added the field DESC so it would go from highest to lowest so that 
+# way I can simply just take the first 20 as the top 20 actors who 
+# have been in the most movies.
 dbGetQuery(con, "SELECT actors.lname ||', '|| actors.fname 'Last Name, First Name', 
            COUNT(DISTINCT(acted_in.idmovies)) '# of Movies Acted In' 
            FROM actors 
@@ -337,7 +407,7 @@ dbGetQuery(con, "SELECT actors.lname ||', '|| actors.fname 'Last Name, First Nam
            ORDER BY COUNT(DISTINCT(acted_in.idmovies)) DESC 
            LIMIT 20")
 ```
-```{r}
+```{r, cache=TRUE}
 #redo in R syntax
 releventCol9 = dbGetQuery(con, "SELECT actors.lname, actors.fname, 
                           acted_in.idmovies, movies.type 
@@ -350,29 +420,32 @@ releventCol9 = dbGetQuery(con, "SELECT actors.lname, actors.fname,
                           ON movies.idmovies = series.idmovies 
                           WHERE series.idmovies IS NULL")
 ```
-```{r}
-#get only the rows where the column type is equal to 3
+```{r, cache=TRUE}
+# get only the rows where the column type is equal to 3
 releventCol9 = subset(releventCol9, releventCol9$type == 3)
-#combine column lname and fname rogether seperated by a comma followed by a space (found on stack overflow)
+# combine column lname and fname rogether seperated by a 
+# comma followed by a space (found on stack overflow)
 releventCol9 = within(releventCol9, 
                       lfname <- paste(releventCol9$lname, 
                                      releventCol9$fname, sep = ', '))
-#remove the columns lname and fname since we already have a combined column
+# remove the columns lname and fname since we already have 
+# a combined column
 releventCol9$lname = releventCol9$fname = NULL
 #remove all duplicates from both the columns lfname and idmovies
 releventCol9 = releventCol9[!duplicated(releventCol9[c("lfname","idmovies")]),]
 ```
-```{r}
+```{r, cache=TRUE, message=FALSE}
 library(plyr)
-#go through every row in releventCol9 and group all the unique lfname and count how many times each unique lfname appears
+# go through every row in releventCol9 and group all the 
+# unique lfname and count how many times each unique lfname appears
 countedRows = ddply(releventCol9,.(lfname), nrow)
-#rename the column V1 to totalMovies
+# rename the column V1 to totalMovies
 countedRows$totalMovies = countedRows$V1
-#remove the column V1 by setting it to NULL
+# remove the column V1 by setting it to NULL
 countedRows$V1 = NULL
-#sort the rows by totalMovies from largest to smallest value
+# sort the rows by totalMovies from largest to smallest value
 sortedRows = countedRows[order(countedRows$totalMovies, decreasing = TRUE),]
-#get the top/first 20, I get the same output as I do in SQL
+# get the top/first 20, I get the same output as I do in SQL
 head(sortedRows, 20)
 ```
 I had to add WHERE...AND actors.lname IS NOT NULL or else I would have a row of NA's that looked like this in my output:
@@ -404,9 +477,22 @@ I tried my best to do questions 9-12 in R with as little SQL as possible. I had 
 When redoing the problem in R, I used dbGetQuery to help me get my relevent columns and setting a LIMIT of 10000 as a test run. I had to use SQL to help me get the relevent columns I needed because when I attempted to join in R using the function merge(), I would get an error message saying that I am out of memory. 
 
 ###Question 10: Who are the actors that have had the most number of movies with "top billing", i.e., billed as 1, 2 or 3? For each actor, also show the years these movies spanned?
-```{r}
-#gets the actors that have most number of movies with "top billing". First join the tables actors and acted_in to get the columns last and first name of the actors and the column billing_position. Next join the tables movies and acted_in to get the column years from movies. Then COUNT the columns to get number of movies (COUNT(*column*) just counts how many non-null values are in that column, but COUNT(*) counts every column). After JOINing, I filter my results by using the WHERE clause. I only want the top billing positions 1, 2, 3, so billing_position must be equal to or less than 3. I do not want any non-null values for the actor's name because that does not tell me anything. Finally, I want to GROUP BY the actor's full name and ORDER BY the COUNT (number of movies) and DESC which goes from highest to lowest, and finally, I want to ORDER BY billing position after COUNT(*)
-dbGetQuery(con, "SELECT actors.lname ||', '|| actors.fname 'Last Name, First Name',
+```{r, cache=TRUE}
+# gets the actors that have most number of movies with "top billing". 
+# First join the tables actors and acted_in to get the columns last 
+# and first name of the actors and the column billing_position. Next 
+# join the tables movies and acted_in to get the column years from movies. 
+# Then COUNT the columns to get number of movies (COUNT(*column*) just 
+# counts how many non-null values are in that column, but COUNT(*) counts 
+# every column). After JOINing, I filter my results by using the WHERE clause. 
+# I only want the top billing positions 1, 2, 3, so billing_position 
+# must be equal to or less than 3. I do not want any non-null values for 
+# the actor's name because that does not tell me anything. Finally, 
+# I want to GROUP BY the actor's full name and ORDER BY the COUNT 
+# (number of movies) and DESC which goes from highest to lowest, and 
+# finally, I want to ORDER BY billing position after COUNT(*)
+dbGetQuery(con, 
+           "SELECT actors.lname ||', '|| actors.fname 'Last Name, First Name',
            COUNT(DISTINCT(movies.title)) '# Of Movies', 
            MIN(movies.year) || '-' || MAX(movies.year) 'Years Spanned' 
            FROM actors 
@@ -425,7 +511,7 @@ dbGetQuery(con, "SELECT actors.lname ||', '|| actors.fname 'Last Name, First Nam
            DESC, acted_in.billing_position 
            LIMIT 10")
 ```
-```{r}
+```{r, cache=TRUE}
 releventCol10 = dbGetQuery(con, "SELECT actors.lname,actors.fname, 
                            movies.year, movies.idmovies, acted_in.billing_position 
                            FROM actors 
@@ -437,10 +523,11 @@ releventCol10 = dbGetQuery(con, "SELECT actors.lname,actors.fname,
                            ON movies.idmovies = series.idmovies 
                            WHERE series.idmovies IS NULL")
 ```
-```{r}
+```{r, cache=TRUE}
 #get the rows where billing_position is equal to or less than 3
 releventCol10 = subset(releventCol10, releventCol10$billing_position <= 3)
-#combine column lname and fname rogether seperated by a comma followed by a space (found on stack overflow)
+#combine column lname and fname rogether seperated by a comma followed by 
+#a space (found on stack overflow)
 releventCol10 = within(releventCol10, 
                       lfname <- paste(releventCol10$lname, 
                                      releventCol10$fname, sep = ', '))
@@ -453,12 +540,13 @@ topActors = aggregate(year ~ lfname, releventCol10, min)
 #rename the column year to minYear
 topActors$minYear = topActors$year
 ```
-```{r}
+```{r, cache=TRUE}
 #remove the column year
 topActors$year = NULL
 #get the max year while grouping by lfname, set this to a column in topActors
 topActors$maxYear = aggregate(year ~ lfname, releventCol10, max)$year
-#group by lfname and get the count (length) of years, assign this to the column totalMovies
+#group by lfname and get the count (length) of years, assign this to the 
+#column totalMovies
 topActors$totalMovies = aggregate(year ~ lfname, releventCol10, length)$year
 #sort by the value of totalMovies from largest to smallest
 topActors = topActors[order(topActors$totalMovies, decreasing = TRUE),]
@@ -483,8 +571,32 @@ When redoing this problem in R, I used dbGetQuery to help me get my relevent col
 ###Question 11: Who are the 10 actors that performed in the most movies within any given year? What are their names, the year they starred in these movies and the names of the movies?
 
 I had to set the limit to 1 or else my table would be 5 pages long. Output of 1 already fills up an entire page because of all the movie titles. The first output shows that my SQL does display all the movies the actor performed in that year. I showed the top 10 actors below by copy and pasting my output. Writing another query to output it would have taken a longer for R to knit.
-```{r}
-#I SELECTed the columns lname and fname from the table actors. I INNER JOINed actors and acted_in ON the key column idactors. Although I did not take any columns from acted _in, I still needed to INN JOIN actors and acted _in together in order to connect/JOIN the table movies. Next I SELECTed the column year and title from the table movies and INNER JOINed the table acted _in and movies ON the key column idmovies. Now that I have the columns I need, I needed to filter my results. I did a LEFT JOIN on series by the key column idmovies and I set series.idmovies to IS NULL because I want to remove all the tv series from the movie table (where type = 3). I used the WHERE clause to only get movies that are type 3, and then I grouped by the actor's last name, first name because there are likely repeated actor names, but in different movies, so GROUPing by actor names will allow me to see their total amount performed. I did COUNT(DISTINCT(movies.title)), so that way movie title's would not repeat or else the list would be very long. COUNting the movies.title only counts the movies that have already has the series filtered out. Finally, I ORDERed BY COUNT(DISTINCT(movies.title)) and I set it to DESC so it goes from highest to lowest. That way I can simply LIMIT and take the first 10. I used GROUP_ CONCAT() so I could display all the movie titles while also GROUPing by the actor's last and first name. I had to use the function GROUP_CONCAT() because using GROUP() condenses all the titles and displays only one of the many titles that were grouped together, instead of displaying all the titles per group.
+```{r, cache=TRUE}
+# I SELECTed the columns lname and fname from the table actors. 
+# I INNER JOINed actors and acted_in ON the key column idactors. 
+# Although I did not take any columns from acted _in, I still 
+# needed to INN JOIN actors and acted _in together in order to 
+# connect/JOIN the table movies. Next I SELECTed the column year 
+# and title from the table movies and INNER JOINed the table 
+# acted _in and movies ON the key column idmovies. Now that I have 
+# the columns I need, I needed to filter my results. I did a 
+# LEFT JOIN on series by the key column idmovies and I set 
+# series.idmovies to IS NULL because I want to remove all the tv series 
+# from the movie table (where type = 3). I used the WHERE clause to only 
+# get movies that are type 3, and then I grouped by the actor's last name, 
+# first name because there are likely repeated actor names, but in 
+# different movies, so GROUPing by actor names will allow me to see 
+# their total amount performed. I did COUNT(DISTINCT(movies.title)), 
+# so that way movie title's would not repeat or else the list would be 
+# very long. COUNting the movies.title only counts the movies that have 
+# already has the series filtered out. Finally, I ORDERed BY COUNT(DISTINCT(movies.title)) 
+# and I set it to DESC so it goes from highest to lowest. 
+# That way I can simply LIMIT and take the first 10. I used 
+# GROUP_ CONCAT() so I could display all the movie titles while also 
+# GROUPing by the actor's last and first name. I had to use the function 
+# GROUP_CONCAT() because using GROUP() condenses all the titles and displays 
+# only one of the many titles that were grouped together, instead of 
+# displaying all the titles per group.
 dbGetQuery(con, "SELECT actors.lname ||', '|| actors.fname 'Last Name, First Name',
            movies.year 'Year', 
            COUNT(DISTINCT(movies.title)) '# Performed', 
@@ -505,7 +617,7 @@ dbGetQuery(con, "SELECT actors.lname ||', '|| actors.fname 'Last Name, First Nam
            DESC 
            LIMIT 1")
 ```
-```{r}
+```{r, cache=TRUE}
 #to get just the top 10 without all the movie titles (because it's too long)
 dbGetQuery(con, "SELECT actors.lname ||', '|| actors.fname 'Last Name, First Name',
            movies.year 'Year', 
@@ -526,8 +638,10 @@ dbGetQuery(con, "SELECT actors.lname ||', '|| actors.fname 'Last Name, First Nam
            DESC 
            LIMIT 10")
 ```
-```{r}
-#get the relevent columns needed to redo in R because when I attempt to merge() tables together, R keeps on saying that the database is too large
+```{r, cache=TRUE}
+#get the relevent columns needed to redo in R because when I 
+# attempt to merge() tables together, R keeps on saying that 
+# the database is too large
 releventCol11 = dbGetQuery(con, "SELECT actors.lname, actors.fname, 
                            movies.year, movies.title, movies.type
                            FROM actors 
@@ -539,43 +653,52 @@ releventCol11 = dbGetQuery(con, "SELECT actors.lname, actors.fname,
                            ON movies.idmovies = series.idmovies 
                            WHERE series.idmovies IS NULL")
 ```
-```{r}
-#get years that are between 2016 and 1885 (exclusive)
+```{r, cache=TRUE}
+# get years that are between 2016 and 1885 (exclusive)
 releventCol11 = subset(releventCol11, releventCol11$year > 1885 | releventCol11$year < 2016)
 #get only the movie.type = 3
 releventCol11 = subset(releventCol11, releventCol11$type == 3)
-#combine column lname and fname rogether seperated by a comma followed by a space (found on stack overflow)
+# combine column lname and fname rogether seperated by a 
+# comma followed by a space (found on stack overflow)
 releventCol11 = within(releventCol11, 
                       lfname <- paste(releventCol11$lname, 
-                                     releventCol11$fname, sep = ', '))
-#remove the columns lname and fname since we already have a combined column
+                                      releventCol11$fname, sep = ', '))
+# remove the columns lname and fname since we already 
+# have a combined column
 releventCol11$lname = releventCol11$fname = NULL
-#remove all duplicates from both the columns lfname and title
+# remove all duplicates from both the columns lfname and title
 releventCol11 = releventCol11[!duplicated(releventCol11[c("lfname","title")]),]
-#group by the columns lfname and year, and get the length(which is basically the count) of the column title
+# group by the columns lfname and year, and get the 
+# length(which is basically the count) of the column title
 moviesPerYear = aggregate(title ~ lfname + year, releventCol11, length)
 #rename the column title to totalMovies
 moviesPerYear$totalMovies = moviesPerYear$title
-#remove the column title
+# remove the column title
 moviesPerYear$title = NULL
-#sort the rows by the column totalmovies from largest to smallest value
+# sort the rows by the column totalmovies 
+# from largest to smallest value
 moviesPerYear = moviesPerYear[order(moviesPerYear$totalMovies, decreasing = TRUE),]
 ```
-```{r}
-#filtered down to top 10 to keep tables small
+```{r, cache=TRUE}
+# filtered down to top 10 to keep tables small
 top10ActedYears = head(moviesPerYear, 10)
-#aggregate takes likes values and combines them, group by lfname and year, title is the column that paste will work on, so paste will display all the movie titles
+# aggregate takes likes values and combines them, 
+# group by lfname and year, title is the column that paste will work on, 
+# so paste will display all the movie titles
 movieTitles = aggregate(title ~ lfname + year, releventCol11, paste,sep=", ")
-#merge function will automatically look for matching column names and combine rows whome these names match. parameters are data frames
+# merge function will automatically look for matching column
+# names and combine rows whome these names match. 
+# parameters are data frames
 top10ActedYearsCombined = merge(movieTitles, top10ActedYears)
 #sort rows by the column totalMovies from largest to smallest value
 top10ActedYearsCombined = top10ActedYearsCombined[order(top10ActedYearsCombined$totalMovies, 
                                                         decreasing = TRUE),]
-#reorder the columns by index so it looks similar to my SQL output and display top10ActedYearsCombined, I get the same output as I do in SQL
+# reorder the columns by index so it looks similar to my SQL 
+# output and display top10ActedYearsCombined, I get the 
+# same output as I do in SQL
 top10ActedYearsCombined = top10ActedYearsCombined[,c(1,2,4,3)]
 head(top10ActedYearsCombined, 1)
 top10ActedYearsCombined[,c(1,2,3)]
-
 ```
 
 The 10 actors the performed in the most movies are posted above with their corresponding year and movie title.
@@ -587,8 +710,14 @@ I later added WHERE actors.lname IS NOT NULL. It wouldn't make sense to keep the
 When redoing it in R, I used dbGetQuery to help me get my relevent columns and setting a LIMIT of 10000 as a test run. When I tried to merge() the tables, it runs out of memory and R would time out and stop running, so I had to use SQL to JOIN the tables.
 
 ###Question 12: Who are the 10 actors that have the most aliases (i.e., see the aka_names table).
-```{r}
-#get the 10 actors with the most amount of aliases (nicknames/aka names). I first took the columns lname, fname and name from the tables actors and aka_names. I INNER JOINed the two tables actors and aka_names so I can get only the actors that have aliases. I made a column that counted all the aliases of each actor since I GROUPed by the actor's lname and fname. Next I ordered by actors with the most amount of aliases (highest to lowest value)
+```{r, cache=TRUE}
+# get the 10 actors with the most amount of aliases (nicknames/aka names). 
+# I first took the columns lname, fname and name from the tables actors 
+# and aka_names. I INNER JOINed the two tables actors and aka_names so I 
+# can get only the actors that have aliases. I made a column that counted 
+# all the aliases of each actor since I GROUPed by the actor's lname and 
+# fname. Next I ordered by actors with the most amount of aliases 
+# (highest to lowest value)
 dbGetQuery(con, "SELECT actors.lname ||', '|| actors.fname 'Last Name, First Name', 
            COUNT(aka_names.name) '# Of Aliases' 
            FROM actors 
@@ -600,22 +729,26 @@ dbGetQuery(con, "SELECT actors.lname ||', '|| actors.fname 'Last Name, First Nam
            DESC 
            LIMIT 10")
 ```
-```{r}
-#redo in R
+```{r, cache=TRUE}
+# redo in R
 releventCol12 = dbGetQuery(con, "SELECT actors.lname,actors.fname, aka_names.idaka_names 
                            FROM actors 
                            INNER JOIN aka_names 
                            ON actors.idactors = aka_names.idactors")
-#combine column lname and fname together, seperated by a comma followed by a space
+# combine column lname and fname together, 
+# seperated by a comma followed by a space
 releventCol12 = within(releventCol12, 
                       lfname <- paste(releventCol12$lname, 
                                      releventCol12$fname, sep = ', '))
 #remove the columns lname and fname since we already have a combined column
 releventCol12$lname = releventCol12$fname = NULL
 ```
-```{r}
+```{r, cache=TRUE, message=FALSE}
 library(plyr)
-#get the counts of each unique lfname that repeats, do this for all rows (hence nrow). I'm not 100% sure how this line of code works. I found it on Stacked Overflow, but it does what I want it to do.
+# get the counts of each unique lfname that repeats, 
+# do this for all rows (hence nrow). I'm not 100% sure how 
+# this line of code works. I found it on Stacked Overflow, 
+# but it does what I want it to do.
 countedRows = ddply(releventCol12,.(lfname), nrow)
 #rename the column V1 to totalAliases
 countedRows$totalAliases = countedRows$V1
@@ -640,9 +773,25 @@ I needed to remove the NA's because NA is not an actor's name and it does not te
 When redoing it in R, I used dbGetQuery to help me get my relevent columns and setting a LIMIT of 10000 as a test run. If I didn't use SQL to help me get the relevent columns I would run out of memory when I attempt to merge() in R.
 
 ###Question 13: Networks: Pick a (lead) actor who has been in at least 20 movies. Find all of the other actors that have appeared in a movie with that person. For each of these, find all the people they have appeared in a movie with. Use this to create a network/graph of who has appeared with who.
-```{r}
-#for actor Andrew Garfield, he appeared in 53 movies (movies only excluding TV series); however, IMDB also includes award shows such as Much Music Video Music Awards andFilm Independent SPirit Awards as a movie
-#To get all the second and third degree matches for Andrew Garfield, I had to first find all the movies that he has been in. Next I find all the people who have been in the same movies as him and this can be done by finding all the actors who have been in the same movie ID (easier than finding the actors by movie names/title). This is done by checking the same tables again and getting the first and last names of the actors. Since I cannot INNER JOIN the same table names repeated in a single query, I renamed the tables to actors2, acted_in2, series2 and movies2. To find people who are three degrees away from Andrew Garfield, I do the same thing as I did for finding the people who are two degrees from Andrew Garfield, instead I change all the 2's to 3's. Next I filtered my results by removing all the movies/TV shows with a series ID and only took actors that had a billing position of 1, 2 or 3. To remove NA's from my table, I set the actor's lname to IS NOT NULL. Then I ordered my table my movie ID.
+```{r, cache=TRUE}
+# for actor Andrew Garfield, he appeared in 53 movies (movies only 
+# excluding TV series); however, IMDB also includes award shows such 
+# as Much Music Video Music Awards andFilm Independent SPirit Awards 
+# as a movie
+# To get all the second and third degree matches for Andrew Garfield, 
+# I had to first find all the movies that he has been in. Next I find 
+# all the people who have been in the same movies as him and this can be 
+# done by finding all the actors who have been in the same movie ID (easier 
+# than finding the actors by movie names/title). This is done by checking the 
+# same tables again and getting the first and last names of the actors. Since 
+# I cannot INNER JOIN the same table names repeated in a single query, I 
+# renamed the tables to actors2, acted_in2, series2 and movies2. To find 
+# people who are three degrees away from Andrew Garfield, I do the same 
+# thing as I did for finding the people who are two degrees from Andrew 
+# Garfield, instead I change all the 2's to 3's. Next I filtered my results 
+# by removing all the movies/TV shows with a series ID and only took actors 
+# that had a billing position of 1, 2 or 3. To remove NA's from my table, 
+# I set the actor's lname to IS NOT NULL. Then I ordered my table my movie ID.
 actedWithDF = dbGetQuery(con, "SELECT actors.lname ||', '||actors.fname 'First Degree', 
                          actors2.lname ||', '||actors2.fname 'Second Degree', 
                          actors3.lname ||', '||actors3.fname 'Third Degree' 
@@ -675,25 +824,31 @@ actedWithDF = dbGetQuery(con, "SELECT actors.lname ||', '||actors.fname 'First D
                          AND actors3.lname IS NOT NULL 
                          ORDER BY movies.idmovies")
 ```
-```{r}
-#get all the matches with the first degree and second degree, so remove the third column by setting it to null
+```{r, cache=TRUE}
+# get all the matches with the first degree and second degree, so remove 
+# the third column by setting it to null
 firstDegree = actedWithDF
 firstDegree$`Third Degree` = NULL
 
-#get all the matches with the second degree and third degree, so remove the first column by setting it to null
+# get all the matches with the second degree and third degree, 
+# so remove the first column by setting it to null
 secondDegree = actedWithDF
 secondDegree$`First Degree` = NULL
 
-#rename the first columns in the data frame firstDegree and secondDegree to 'first' in order to rbind() them
+# rename the first columns in the data frame firstDegree 
+# and secondDegree to 'first' in order to rbind() them
 colnames(firstDegree)[1] = colnames(secondDegree)[1] = 'first'
-#rename the second columns in the data frame firstDegree and secondDegree to 'second' in order to rbind() them
+# rename the second columns in the data frame firstDegree and 
+# secondDegree to 'second' in order to rbind() them
 colnames(firstDegree)[2] = colnames(secondDegree)[2] = 'second'
 ```
-```{r}
+```{r, cache=TRUE, message=FALSE}
 library(igraph)
-#row bind (stack them from tail to head/head to tail) them so now we only have two columns, but have all the possible pairs between first & second degree and second & third degree
+#row bind (stack them from tail to head/head to tail) them so 
+# now we only have two columns, but have all the possible pairs 
+# between first & second degree and second & third degree
 getAllMatches = graph.data.frame(rbind(firstDegree, secondDegree), directed = FALSE)
-#use the function simplify to remove all duplicate matches
+# use the function simplify to remove all duplicate matches
 question11Graph = plot(simplify(getAllMatches))
 ```
 
@@ -706,7 +861,7 @@ In my igraph, Garfield is in the center since he is first degree (according to W
 ###Question 14: What are the 10 television series that have the most number of movie stars appearing in the shows?
 
 Here is my attempt at 14. It doesn't work. When I ran the query, I let it run for 6 hours and it was still going, so I stopped it. I had to comment it out or else it would not knit (or rather it would take forever to knit).
-```{r}
+```{r, cache=TRUE}
 # dbGetQuery(con, "SELECT name, 
 #            COUNT(DISTINCT(idactors)) 
 #            FROM (SELECT series.name, acted_in.idactors 
